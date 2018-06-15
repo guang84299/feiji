@@ -130,6 +130,25 @@ cc.Class({
             }
         });
 
+        wx.showShareMenu({
+            withShareTicket: true,
+            success: function (res) {
+                // 分享成功
+                cc.log(res);
+            },
+            fail: function (res) {
+                // 分享失败
+            }
+        });
+
+        wx.onShareAppMessage(function (ops){
+            return {
+                title: "小哥哥，打灰机坚持30秒了解一下！",
+                imageUrl: cc.url.raw("resources/zhuanfa.jpg")
+            }
+        });
+
+
     },
 
     wxOpenSetting: function()
@@ -888,6 +907,25 @@ cc.Class({
     },
     wxGropShareCard: function()
     {
+        var sharetime = cc.sys.localStorage.getItem("sharetime");
+        sharetime = sharetime ? sharetime : 0;
+        var now = new Date().getTime();
+        if(now - sharetime > 24*60*60*1000)
+        {
+            cc.sys.localStorage.setItem("sharetime",now);
+            cc.sys.localStorage.setItem("sharenum",0);
+        }
+
+        var sharenum = cc.sys.localStorage.getItem("sharenum");
+        sharenum = sharenum ? sharenum : 0;
+        if(sharenum>=5)
+        {
+            wx.showToast({
+                title: "每天最多领取5次"
+            });
+            return;
+        }
+
         var self = this;
         wx.shareAppMessage({
             title: "小哥哥，打灰机坚持30秒了解一下！",
@@ -895,10 +933,9 @@ cc.Class({
             success: function(res)
             {
                 wx.showToast({
-                    title: "获取到一个复活卡！",
-                    duration: 0.2
+                    title: "获取到一个复活卡"
                 });
-
+                cc.sys.localStorage.setItem("sharenum",(sharenum+1));
 
                 var cardnum = cc.sys.localStorage.getItem("cardnum");
                 cardnum = cardnum ? cardnum : 0;
@@ -1274,7 +1311,7 @@ cc.Class({
     ShowBaoHuTiShi: function()
     {
         var self = this;
-        var s = cc.winSize;
+        var s = this.dsize;
         var childTbale = self.BaoHuIconNode.children;
         var isshow = true;
         var postest;
@@ -1302,8 +1339,8 @@ cc.Class({
             var chaoxiang = cc.pSub(postest,cc.p(s.width * 0.5,s.height * 0.5));
 
             chaoxiang = cc.pNormalize(chaoxiang);
-            chaoxiang.x = chaoxiang.x * (s.width * 0.5);
-            chaoxiang.y = chaoxiang.y * (s.width * 0.5);
+            chaoxiang.x = chaoxiang.x * (s.width * 0.3);
+            chaoxiang.y = chaoxiang.y * (s.width * 0.3);
             var daodanpos = cc.pAdd(chaoxiang,cc.p(s.width/2,s.height/2));
             hudun.setPosition(daodanpos);
 
@@ -1323,7 +1360,7 @@ cc.Class({
     ShowJinBiTiShi: function()
     {
         var self = this;
-        var s = cc.winSize;
+        var s = this.dsize;
 
         var childTbale = self.JinBiNode.children;
         var isshow = true;
@@ -1354,8 +1391,8 @@ cc.Class({
             var chaoxiang = cc.pSub(postest,cc.p(s.width * 0.5,s.height * 0.5));
 
             chaoxiang = cc.pNormalize(chaoxiang);
-            chaoxiang.x = chaoxiang.x * (s.width * 0.5);
-            chaoxiang.y = chaoxiang.y * (s.width * 0.5);
+            chaoxiang.x = chaoxiang.x * (s.width * 0.3);
+            chaoxiang.y = chaoxiang.y * (s.width * 0.3);
             var daodanpos = cc.pAdd(chaoxiang,cc.p(s.width/2,s.height/2));
             hudun.setPosition(daodanpos);
 
@@ -1659,6 +1696,7 @@ cc.Class({
         self.node_fuhuo.active = false;
         self.GAME.playerHp = 1;
         self.rPlayGameTime = 1;
+        self.GAME.playerfuhuo = false;
 
         var cardnum = cc.sys.localStorage.getItem("cardnum");
         cc.sys.localStorage.setItem("cardnum",(cardnum-1));
