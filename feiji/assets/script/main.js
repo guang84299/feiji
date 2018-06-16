@@ -730,7 +730,13 @@ cc.Class({
 
         self.node_quanxian = cc.find("Canvas/node_quanxian");
 
-
+        var node_main_fuhuo = cc.find("fuhuo",self.node_main);
+        var stringTime = "2018-06-21 00:01:00";
+        var timestamp2 = Date.parse(new Date(stringTime));
+        if(new Date().getTime() < timestamp2)
+        {
+            node_main_fuhuo.active = false;
+        }
 
         self.node_game_ui.active = false;
         self.node_quanxian.active = false;
@@ -2309,7 +2315,7 @@ cc.Class({
 
         }
         this.subdt += dt;
-        if(this.subdt > 0.05)
+        if(this.subdt > 0.2)
         {
             this.subdt = 0;
             this._updaetSubDomainCanvas();
