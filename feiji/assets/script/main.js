@@ -732,7 +732,7 @@ cc.Class({
 
         var node_main_fuhuo = cc.find("fuhuo",self.node_main);
         var stringTime = "2018-06-21 00:01:00";
-        var timestamp2 = Date.parse(new Date(stringTime));
+        var timestamp2 = (new Date(Date.parse(stringTime.replace(/-/g,"/")))).getTime();
         if(new Date().getTime() < timestamp2)
         {
             node_main_fuhuo.active = false;
