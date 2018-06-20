@@ -99,7 +99,7 @@ cc.Class({
 
 
         this.wxGetUserInfo();
-
+        this.wxOpenQuan();
         cc.audioEngine.play(this.audio_music2, true, 1);
     },
 
@@ -143,7 +143,7 @@ cc.Class({
 
         wx.onShareAppMessage(function (ops){
             return {
-                title: "小哥哥，打灰机坚持30秒了解一下！",
+                title: "小哥哥，打灰机吗",
                 imageUrl: cc.url.raw("resources/zhuanfa.jpg")
             }
         });
@@ -157,8 +157,6 @@ cc.Class({
         self.node_quanxian.active = true;
         var openDataContext = wx.getOpenDataContext();
         var sharedCanvas = openDataContext.canvas;
-        cc.log(sharedCanvas.width);
-        cc.log(sharedCanvas.height);
         var button = wx.createOpenSettingButton({
             type: 'text',
             text: '打开设置页面',
@@ -224,6 +222,26 @@ cc.Class({
         this.display.spriteFrame = new cc.SpriteFrame(this.tex);
         if(this.display.node.scale == 1)
             this.display.node.scale = (this.dsize.width / this.display.node.width);
+    },
+
+
+    wxOpenQuan: function()
+    {
+        var openDataContext = wx.getOpenDataContext();
+        var sharedCanvas = openDataContext.canvas;
+        var quan = cc.find("bootembg/quan",this.node_main);
+        var sc = sharedCanvas.width/this.dsize.width;
+        var dpi = cc.view._devicePixelRatio;
+        var pos = cc.v2(quan.x*sc/dpi,sharedCanvas.height/dpi-quan.y*sc/dpi);
+        this.quan_button = wx.createGameClubButton({
+            icon: 'white',
+            style: {
+                left: pos.x - 15,
+                top: pos.y - 15,
+                width: 30,
+                height: 30
+            }
+        })
     },
 
     adapt: function()
@@ -714,6 +732,8 @@ cc.Class({
         self.node_main = cc.find("Canvas/node_main");
         self.node_main_score = cc.find("score",self.node_main);
         self.node_pause = cc.find("Canvas/node_pause");
+        self.node_pause_tishi = cc.find("tishi",self.node_pause);
+        self.node_pause_hand = cc.find("hand",self.node_pause);
         self.node_over = cc.find("Canvas/node_over");
         self.node_over_score = cc.find("score",self.node_over);
         self.node_over_chaoguo = cc.find("chaoguo",self.node_over);
@@ -721,7 +741,10 @@ cc.Class({
         self.node_fuhuo = cc.find("Canvas/node_fuhuo");
         self.node_fuhuo_score = cc.find("score",self.node_fuhuo);
         self.node_fuhuo_circle = cc.find("time/fuhuo_circle",self.node_fuhuo);
-        self.node_fuhuo_num = cc.find("time/fuhuonum",self.node_fuhuo);
+        self.node_fuhuo_num = cc.find("time/havecard/fuhuonum",self.node_fuhuo);
+        self.node_fuhuo_havecard = cc.find("time/havecard",self.node_fuhuo);
+        self.node_fuhuo_nocard = cc.find("time/nocard",self.node_fuhuo);
+        self.node_fuhuo_skip = cc.find("skip",self.node_fuhuo);
 
         self.node_paiming = cc.find("Canvas/node_paiming");
 
@@ -730,8 +753,11 @@ cc.Class({
 
         self.node_quanxian = cc.find("Canvas/node_quanxian");
 
+        self.node_pause_tishi.active = false;
+        self.node_pause_hand.active = false;
+
         var node_main_fuhuo = cc.find("fuhuo",self.node_main);
-        var stringTime = "2018-06-21 00:01:00";
+        var stringTime = "2018-06-21 22:01:00";
         var timestamp2 = (new Date(Date.parse(stringTime.replace(/-/g,"/")))).getTime();
         if(new Date().getTime() < timestamp2)
         {
@@ -853,6 +879,27 @@ cc.Class({
 
         this.wxCloseOver();
         this.wxCloseRank();
+
+
+        if(cc.sys.os == cc.sys.OS_ANDROID)
+        {
+            var playnum = cc.sys.localStorage.getItem("playnum");
+            playnum = playnum ? playnum : 0;
+            if(playnum == 1)
+            {
+                self.node_pause_tishi.active = true;
+                self.node_pause_hand.active = true;
+                self.node_pause.active = true;
+                self.node_pause_hand.runAction(cc.repeatForever(cc.sequence(
+                    cc.moveBy(0.3,10,0).easing(cc.easeSineIn()),
+                    cc.moveBy(0.3,-10,0).easing(cc.easeSineIn())
+                )));
+                self.GAME.state = "STOP";
+            }
+            playnum ++;
+            cc.sys.localStorage.setItem("playnum",playnum);
+        }
+
     },
 
     wxCloseOver: function()
@@ -891,7 +938,7 @@ cc.Class({
     wxGropShare: function()
     {
         wx.shareAppMessage({
-            title: "小哥哥，打灰机坚持30秒了解一下！",
+            title: "小哥哥，打灰机吗",
             imageUrl: cc.url.raw("resources/zhuanfa.jpg"),
             success: function(res)
             {
@@ -934,7 +981,7 @@ cc.Class({
 
         var self = this;
         wx.shareAppMessage({
-            title: "小哥哥，打灰机坚持30秒了解一下！",
+            title: "小哥哥，打灰机吗",
             imageUrl: cc.url.raw("resources/zhuanfa.jpg"),
             success: function(res)
             {
@@ -954,12 +1001,28 @@ cc.Class({
         });
     },
 
+    wxGropShareFuhuo: function()
+    {
+        var self = this;
+        wx.shareAppMessage({
+            title: "小哥哥，打灰机吗",
+            imageUrl: cc.url.raw("resources/zhuanfa.jpg"),
+            success: function(res)
+            {
+                wx.showToast({
+                    title: "复活成功"
+                });
+                self.fuhuo2();
+            }
+        });
+    },
 
     click: function(event,data)
     {
         if(data == "start")
         {
             this.node_main.active = false;
+            this.quan_button.hide();
             this.startGmae();
         }
         else if(data == "pause")
@@ -969,8 +1032,18 @@ cc.Class({
         }
         else if(data == "resume")
         {
-            cc.director.resume();
-            this.node_pause.active = false;
+            if(this.node_pause_tishi.active)
+            {
+                this.GAME.state = "START";
+                this.node_pause_tishi.active = false;
+                this.node_pause_hand.active = false;
+                this.node_pause.active = false;
+            }
+            else
+            {
+                cc.director.resume();
+                this.node_pause.active = false;
+            }
         }
         else if(data == "main")
         {
@@ -988,7 +1061,10 @@ cc.Class({
         }
         else if(data == "fuhuo")
         {
-            this.fuhuo();
+            if(this.node_fuhuo_havecard.active)
+                this.fuhuo();
+            else
+                this.wxGropShareFuhuo();
         }
         else if(data == "skip")
         {
@@ -996,6 +1072,7 @@ cc.Class({
         }
         else if(data == "paiming")
         {
+            this.quan_button.hide();
             this.showPaiming();
         }
         else if(data == "paimingover")
@@ -1013,6 +1090,10 @@ cc.Class({
                 this.openover = false;
                 this.node_over.active = true;
                 this.wxOverRank();
+            }
+            else
+            {
+                this.quan_button.show();
             }
         }
         else if(data == "getcard")
@@ -1039,6 +1120,7 @@ cc.Class({
         cc.log(data);
     },
 
+
     goMain: function()
     {
         var self = this;
@@ -1048,6 +1130,7 @@ cc.Class({
         this.node_main.active = true;
         self.node_game_ui.active = false;
         this.node_over.active = false;
+        this.quan_button.show();
         this.wxCloseOver();
         this.wxCloseRank();
 
@@ -1641,27 +1724,43 @@ cc.Class({
         }
         self.playerHurt(1);
 
-        var cardnum = cc.sys.localStorage.getItem("cardnum");
-        cardnum = cardnum ? cardnum : 0;
-        if(self.GAME.playerfuhuo && cardnum > 0)
+        if(self.GAME.playerfuhuo)
         {
             //self.rPlayGameTime = 5; self.GAME.playerHp > 0
             self.judgefuhuo();
         }
         else
         {
-            self.gameOver();
+
         }
     },
 
     judgefuhuo: function()
     {
         var self = this;
+        var stringTime = "2018-06-21 22:01:00";
+        var timestamp2 = (new Date(Date.parse(stringTime.replace(/-/g,"/")))).getTime();
+        if(new Date().getTime() < timestamp2)
+        {
+            self.gameOver();
+            return;
+        }
 
         this.GAME.state = "FUHUO";
 
         var cardnum = cc.sys.localStorage.getItem("cardnum");
         cardnum = cardnum ? cardnum : 0;
+        if(cardnum > 0)
+        {
+            self.node_fuhuo_havecard.active = true;
+            self.node_fuhuo_nocard.active = false;
+        }
+        else
+        {
+            self.node_fuhuo_havecard.active = false;
+            self.node_fuhuo_nocard.active = true;
+        }
+        self.node_fuhuo_skip.active = false;
 
         self.node_game_ui.active = false;
         self.node_fuhuo.active = true;
@@ -1671,24 +1770,31 @@ cc.Class({
         self.node_fuhuo_circle.getComponent("cc.ProgressBar").progress = 1;
 
         //self.rPlayGameTime = 5;
-        self.node_fuhuo_circle.runtime = 5;
+        self.node_fuhuo_circle.runtime = 8;
         var seq = cc.sequence(
             cc.delayTime(0.1),
             cc.callFunc(function(){
                 self.node_fuhuo_circle.runtime -= 0.1;
-                var p = self.node_fuhuo_circle.runtime/5;
+                var p = self.node_fuhuo_circle.runtime/8;
                 self.node_fuhuo_circle.getComponent("cc.ProgressBar").progress = p;
             })
         );
         var seq2 = cc.sequence(
-            cc.delayTime(5),
+            cc.delayTime(8),
             cc.callFunc(function(){
                 self.gameOver();
                 self.node_fuhuo.active = false;
             })
         );
-        self.node_fuhuo_circle.runAction(cc.repeat(seq,50));
+        var seq3 = cc.sequence(
+            cc.delayTime(2),
+            cc.callFunc(function(){
+                self.node_fuhuo_skip.active = true;
+            })
+        );
+        self.node_fuhuo_circle.runAction(cc.repeat(seq,80));
         self.node_fuhuo_circle.runAction(seq2);
+        self.node_fuhuo_circle.runAction(seq3);
     },
 
     fuhuo: function()
@@ -1706,6 +1812,20 @@ cc.Class({
 
         var cardnum = cc.sys.localStorage.getItem("cardnum");
         cc.sys.localStorage.setItem("cardnum",(cardnum-1));
+    },
+
+    fuhuo2: function()
+    {
+        var self = this;
+
+        self.node_fuhuo_circle.stopAllActions();
+        this.GAME.state = "START";
+
+        self.node_game_ui.active = true;
+        self.node_fuhuo.active = false;
+        self.GAME.playerHp = 1;
+        self.rPlayGameTime = 1;
+        self.GAME.playerfuhuo = false;
     },
 
     skip: function()
@@ -2315,7 +2435,10 @@ cc.Class({
 
         }
         this.subdt += dt;
-        if(this.subdt > 0.2)
+        var timeinv = 0.2;
+        if(self.GAME.state != "START")
+            timeinv = 0.06;
+        if(this.subdt > timeinv)
         {
             this.subdt = 0;
             this._updaetSubDomainCanvas();
